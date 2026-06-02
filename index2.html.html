@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>東京13天多人協作行程看板</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#f5f7fb;margin:0}
+header{background:#2563eb;color:#fff;padding:16px;position:sticky;top:0}
+.card{background:#fff;margin:12px;padding:12px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+input,select,textarea{width:100%;padding:8px;margin:4px 0}
+button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer}
+.primary{background:#2563eb;color:white}
+.alt{border:2px dashed #888}
+.small{font-size:12px;color:#666}
+.tabs{display:flex;gap:6px;overflow:auto;padding:8px}
+.tab{background:#e5e7eb;padding:6px 10px;border-radius:999px}
+</style>
+</head>
+<body>
+<header>
+<h2>東京 13 天家庭旅遊協作看板</h2>
+<div>2027/01/17 出發｜2大2小｜即時同步版</div>
+</header>
+
+<div class="card">
+<h3>首次使用</h3>
+<p>輸入名稱（修改紀錄會顯示是誰更新）</p>
+<input id="username" placeholder="例如：爸爸">
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="card">
+<h3>Firebase 設定</h3>
+<p>貼入你的 Firebase Web App Config 後即可多人即時同步。</p>
+<textarea id="firebaseConfig" rows="8" placeholder='{"apiKey":"..."}'></textarea>
+</div>
+
+<div class="card">
+<h3>新增行程</h3>
+<input id="time" placeholder="時間">
+<input id="title" placeholder="活動名稱">
+<input id="place" placeholder="地點">
+<select id="cat">
+<option>市區景點</option>
+<option>郊區景點</option>
+<option>餐廳</option>
+<option>交通</option>
+<option>住宿</option>
+<option>購物</option>
+<option>其他</option>
+</select>
+<input id="cost" type="number" placeholder="費用">
+<button class="primary" onclick="addItem()">新增</button>
+</div>
+
+<div id="list"></div>
+
+<script>
+for(let i=0;i<=13;i++){
+ const b=document.createElement('div');
+ b.className='tab';
+ b.textContent=i===0?'總覽':'Day '+i;
+ document.getElementById('tabs').appendChild(b);
+}
+
+let items=JSON.parse(localStorage.getItem('tokyoTrip')||'[]');
+
+function save(){
+ localStorage.setItem('tokyoTrip',JSON.stringify(items));
+ render();
+}
+
+function addItem(){
+ items.push({
+  time:time.value,title:title.value,place:place.value,
+  cat:cat.value,cost:+cost.value||0,
+  user:username.value||'未命名',
+  updated:new Date().toLocaleString()
+ });
+ save();
+}
+
+function del(i){
+ document.getElementById('confirm'+i).style.display='block';
+}
+
+function reallyDel(i){
+ items.splice(i,1); save();
+}
+
+function render(){
+ const el=document.getElementById('list');
+ el.innerHTML='';
+ let total=0;
+ items.forEach((x,i)=>{
+  total+=x.cost||0;
+  el.innerHTML+=`
+  <div class="card">
+    <b>${x.time||''} ${x.title}</b>
+    <div>${x.place}</div>
+    <div class="small">${x.cat}｜更新：${x.user}｜${x.updated}</div>
+    <div>費用：¥${x.cost||0}</div>
+    <button onclick="del(${i})">刪除</button>
+    <div id="confirm${i}" style="display:none;margin-top:8px">
+      確定刪除？
+      <button onclick="reallyDel(${i})">是</button>
+    </div>
+  </div>`;
+ });
+ el.insertAdjacentHTML('afterbegin',
+ `<div class="card"><b>團體總額預估：¥${total}</b><br>每人均分：約 ¥${Math.round(total/4)}</div>`);
+}
+render();
+</script>
+</body>
+</html>
